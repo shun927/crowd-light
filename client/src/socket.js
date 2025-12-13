@@ -1,8 +1,7 @@
 import { io } from "socket.io-client";
 
-// Since we configured proxy in vite.config.js, we can use relative path (undefined URL).
-// Socket.io will automatically connect to window.location.host
-const URL = undefined;
+// Use environment variable for production (Vercel -> Render), or undefined for local proxy
+const URL = import.meta.env.VITE_SERVER_URL || undefined;
 
 export const socket = io(URL, {
     autoConnect: false
