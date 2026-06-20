@@ -42,12 +42,11 @@ const ClientView = () => {
                 setHasTorch(false);
             }
 
-            // 3. Connect Socket
+            // 3. Connect to the Cloudflare Worker
             socket.auth = { type: 'client' };
             socket.connect();
-            socket.emit('register-client');
             setIsConnected(true);
-            setStatus('Ready');
+            setStatus('Connecting');
 
         } catch (err) {
             console.error(err);
@@ -56,6 +55,13 @@ const ClientView = () => {
     };
 
     useEffect(() => {
+        const handleConnect = () => setStatus('Ready');
+        const handleDisconnect = () => setStatus('Reconnecting');
+        const handleError = (message) => setStatus(message || 'Connection error');
+
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        socket.on('error', handleError);
         socket.on('light-control', (isOn) => {
             console.log('Light Command:', isOn);
             setIsFlashOn(isOn);
@@ -71,7 +77,11 @@ const ClientView = () => {
         });
 
         return () => {
+            socket.off('connect', handleConnect);
+            socket.off('disconnect', handleDisconnect);
+            socket.off('error', handleError);
             socket.off('light-control');
+            socket.disconnect();
             if (trackRef.current) {
                 trackRef.current.stop();
             }

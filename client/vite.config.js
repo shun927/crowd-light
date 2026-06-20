@@ -6,13 +6,12 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 export default defineConfig({
   plugins: [react(), basicSsl()],
   server: {
-    host: true, // Expose to network (0.0.0.0)
+    host: true,
     proxy: {
-      '/socket.io': {
-        target: 'http://localhost:3000',
+      '/ws': {
+        target: 'ws://localhost:8787',
         ws: true
       }
-    },
-    // allowedHosts: true // basicSsl handles host checks usually, but keeping it is fine
+    }
   }
 })

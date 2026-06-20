@@ -5,28 +5,73 @@ import { socket } from '../socket';
 const AdminPanel = () => {
     const [clientCount, setClientCount] = useState(0);
     const [isLightOn, setIsLightOn] = useState(false);
+    const [token, setToken] = useState(() => sessionStorage.getItem('admin-token') || '');
+    const [isConnected, setIsConnected] = useState(false);
+    const [error, setError] = useState('');
 
-    // Generating URL for the user to scan. 
-    // Ideally this is the IP address of the host machine, not localhost.
-    // For now we just use the current window location's origin.
-    // If accessing from another device, the user should be on the IP address.
     const userUrl = window.location.origin;
 
     useEffect(() => {
-        socket.on('client-count', (count) => {
-            setClientCount(count);
-        });
+        const handleConnect = () => {
+            setIsConnected(true);
+            setError('');
+        };
+        const handleDisconnect = (reason) => {
+            setIsConnected(false);
+            if (reason) setError(reason);
+        };
+        const handleError = (message) => setError(message || 'Connection failed');
+        const handleCount = (count) => setClientCount(count);
+        const handleLightState = (isOn) => setIsLightOn(isOn);
+
+        socket.on('connect', handleConnect);
+        socket.on('disconnect', handleDisconnect);
+        socket.on('error', handleError);
+        socket.on('client-count', handleCount);
+        socket.on('light-state', handleLightState);
 
         return () => {
-            socket.off('client-count');
+            socket.off('connect', handleConnect);
+            socket.off('disconnect', handleDisconnect);
+            socket.off('error', handleError);
+            socket.off('client-count', handleCount);
+            socket.off('light-state', handleLightState);
+            socket.disconnect();
         };
     }, []);
 
+    const connectAdmin = (event) => {
+        event.preventDefault();
+        sessionStorage.setItem('admin-token', token);
+        socket.auth = { type: 'admin', token };
+        socket.connect();
+    };
+
     const toggleLight = () => {
         const newState = !isLightOn;
-        setIsLightOn(newState);
         socket.emit('toggle-light', newState);
     };
+
+    if (!isConnected) {
+        return (
+            <form onSubmit={connectAdmin} style={{ textAlign: 'center' }}>
+                <h1>ADMIN ACCESS</h1>
+                <p>Cloudflare に登録した管理トークンを入力してください。</p>
+                <input
+                    type="password"
+                    value={token}
+                    onChange={(event) => setToken(event.target.value)}
+                    placeholder="Admin token"
+                    autoComplete="current-password"
+                    style={{ fontSize: '1rem', padding: '14px', minWidth: '260px' }}
+                />
+                <div style={{ marginTop: '16px' }}>
+                    <button type="submit">CONNECT</button>
+                </div>
+                {error && <p style={{ color: 'var(--neon-red)' }}>{error}</p>}
+            </form>
+        );
+    }
 
     return (
         <div style={{ textAlign: 'center' }}>
