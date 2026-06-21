@@ -89,7 +89,7 @@ const ClientView = () => {
                 <section className="client-connect">
                     <div className="client-connect__copy">
                         <p className="eyebrow">SYNC YOUR LIGHT</p>
-                        <h1>あなたの光を<br />会場のひとつに。</h1>
+                        <h1>あなたの光で、<br />会場をひとつに。</h1>
                         <p>
                             スマートフォンのライトを演出に使用します。
                             カメラ映像や音声が送信されることはありません。
